@@ -1,30 +1,27 @@
 import http from 'node:http';
 import { json } from './middlewares/json.js';
-import { randomUUID } from 'node:crypto';
-
-const allTasks = [];
+import { routes } from './routes.js';
+import { extractQueryParams } from './utils/extract-query-params.js';
 
 const server = http.createServer(async (req, res) => {
+  const { method, url} = req;
 
   await json(req, res);  
 
-  if (req.method === 'GET') {
-    return res.end(JSON.stringify(allTasks));
-  };
+  const route = routes.find(route => {
+    return route.method === method && route.path.test(url)
+  });
 
-  if (req.method === 'POST') {
-    const { title, description } = req.body;
-    allTasks.push(
-      {
-        id: randomUUID(),
-        title,
-        description,
-        completed_at: null,
-        created_at: new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'long' }).format(new Date()),
-        updated_at: new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'long' }).format(new Date()),
-      }
-    );
-    return res.writeHead(201).end();
+
+  if (route) {
+    const routeParams = req.url.match(route.path);
+
+    const { query, ...params } = routeParams.groups;
+
+    req.params = params;
+    req.query = query ? extractQueryParams(query) : {};
+
+    return route.handler(req, res);
   }
 
   return res.writeHead(404).end();
