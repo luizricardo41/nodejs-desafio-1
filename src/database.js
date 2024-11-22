@@ -40,4 +40,36 @@ export class Database {
 
     this.#persist();
   }
+
+  delete(table, taskId) {
+    const taskIndex = this.#database[table].findIndex(({ id }) => id === taskId);
+
+    if (taskIndex > -1) {
+      this.#database[table].splice(taskIndex, 1);
+      this.#persist();
+      return true;
+    }
+    return false;
+  }
+
+  findById(table, taskId) {
+    const taskIndex = this.#database[table].findIndex(({ id }) => id === taskId);
+
+    if (taskIndex > -1) {
+      return this.#database[table][taskIndex];
+    }
+    return false;
+  }
+
+  update(table, taskId, data) {
+    const isTaskExist = this.findById(table, taskId);
+
+    if (isTaskExist) {
+      Object.entries(data).map(([key, value]) => {
+        isTaskExist[key] = value 
+      })
+      this.#persist();
+    }
+    return isTaskExist;
+  }
 }
